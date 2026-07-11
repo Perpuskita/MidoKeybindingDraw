@@ -1,0 +1,134 @@
+import sys
+from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation
+
+class FrontEndToast:
+    def __init__(self):
+        # Pastikan QApplication sudah ada, jika belum buat baru
+        self.app = QApplication.instance()
+        if not self.app:
+            self.app = QApplication(sys.argv)
+            
+        self.toast = QLabel(text="toast")
+        self.anim = None  # Simpan animasi sebagai atribut kelas
+        self.timers = []  # <-- SIMPAN SEMUA TIMER AKTIF
+        self.make_toast()
+    
+    def make_toast(self):
+        self.toast.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint | 
+            Qt.WindowType.WindowStaysOnTopHint | 
+            Qt.WindowType.SubWindow
+        )
+        self.toast.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.toast.setStyleSheet(
+            "QLabel { background-color: #333; color: white; "
+            "font-size: 24px; padding: 20px 40px; border-radius: 5px; }"
+        )
+        self.toast.adjustSize()
+        self.toast.hide() # Sembunyikan awal
+        
+        # Positioning
+        screen = self.app.primaryScreen().geometry()
+        self.toast.move(
+            (screen.width() - self.toast.width()) // 2, 
+            int(screen.height() * 0.85)
+        )
+    
+    def _cancel_all_timers(self):
+        """Cancel semua timer yang masih pending"""
+        for timer_id in self.timers:
+            QTimer.killTimer(timer_id)
+        self.timers.clear()
+    
+    def showtoast(self, text: str = "toast", duration: int = 1000):
+        # 0. CANCEL SEMUA TIMER SEBELUMNYA <-- PENTING!
+        self._cancel_all_timers()
+        
+        # 1. Update konten
+        self.toast.setText(text)
+        self.toast.adjustSize()
+        
+        # 2. Repositioning karena ukuran teks berubah
+        screen = self.app.primaryScreen().geometry()
+        self.toast.move(
+            (screen.width() - self.toast.width()) // 2, 
+            int(screen.height() * 0.85)
+        )
+        
+        # 3. Reset state
+        self.toast.setWindowOpacity(1.0)
+        self.toast.show()
+        
+        # 4. Stop animasi sebelumnya jika ada
+        if self.anim and self.anim.state() == QPropertyAnimation.State.Running:
+            self.anim.stop()
+            
+        # 5. Buat animasi baru
+        self.anim = QPropertyAnimation(self.toast, b"windowOpacity")
+        self.anim.setDuration(500)
+        self.anim.setStartValue(1.0)
+        self.anim.setEndValue(0.0)
+        
+        # 6. Jadwalkan animasi dan hide
+        # Animasi mulai setelah (duration - waktu_animasi)
+        if duration > 500:
+            timer_start = QTimer()
+            timer_start.setSingleShot(True)
+            timer_start.timeout.connect(self.anim.start)
+            timer_start.start(duration - 500)
+            self.timers.append(timer_start.timerId())
+        else:
+            self.anim.start()
+            
+        # Sembunyikan toast setelah durasi selesai
+        timer_hide = QTimer()
+        timer_hide.setSingleShot(True)
+        timer_hide.timeout.connect(self.toast.hide)
+        timer_hide.start(duration)
+        self.timers.append(timer_hide.timerId())
+
+
+class MainWindow(QWidget):
+    def __init__(self, toaster: FrontEndToast):
+        super().__init__()
+        self.toaster = toaster
+        
+        # Setup window
+        self.setWindowTitle("Contoh Toast dengan Tombol")
+        self.setGeometry(100, 100, 400, 300)
+        
+        # Layout
+        layout = QVBoxLayout()
+        
+        # Tombol 1
+        btn1 = QPushButton("Tampilkan Toast 1")
+        btn1.clicked.connect(lambda: self.toaster.showtoast("Pesan Pertama!", 2000))
+        layout.addWidget(btn1)
+        
+        # Tombol 2
+        btn2 = QPushButton("Tampilkan Toast 2")
+        btn2.clicked.connect(lambda: self.toaster.showtoast("Pesan Kedua!", 1500))
+        layout.addWidget(btn2)
+        
+        # Tombol 3
+        btn3 = QPushButton("Tampilkan Toast 3")
+        btn3.clicked.connect(lambda: self.toaster.showtoast("Pesan Ketiga!", 3000))
+        layout.addWidget(btn3)
+        
+        # Tombol spam (untuk testing)
+        btn_spam = QPushButton("SPAM KLIK CEPAT!")
+        btn_spam.clicked.connect(lambda: [self.toaster.showtoast(f"Spam {i}", 1000) for i in range(10)])
+        layout.addWidget(btn_spam)
+        
+        self.setLayout(layout)
+
+
+if __name__ == "__main__":
+    app_qt = QApplication(sys.argv)
+    
+    toaster = FrontEndToast()
+    window = MainWindow(toaster)
+    window.show()
+    
+    sys.exit(app_qt.exec())

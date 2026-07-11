@@ -12,4 +12,4 @@ if __name__  == "__main__" :
     # app.add("C#7", "#Transpose")
 
     # # app.run untuk memulai menjalankan aplikasi
-    # app.run()
+    app.run()

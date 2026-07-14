@@ -1,8 +1,8 @@
 import pygame.midi
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
-from .backend_controller import BackendController
-
+from midikeybindingdraw.utils.frontend import FrontEndToast
+from midikeybindingdraw.exception import MidiException
 
 NOTE: dict = {
     0:"C", 1:"C#", 2:"D", 3:"D#", 4:"E",
@@ -11,20 +11,20 @@ NOTE: dict = {
 }
 
 class BackendMidi:
-    def __init__(self, app: QApplication):
+    def __init__(self, controller):
         pygame.init()
         pygame.midi.init()
-        input_id = pygame.midi.get_default_input_id()
-
-        self.app = app
         
-        if input_id == -1:
-            print("No MIDI input devices found.")
-            return
+        # membuat variabel midi input
+        self.midi_input = None
+        
+        # menyimpan controller
+        self.controller = controller
 
-        self.midi_input = pygame.midi.Input(input_id)
-        print(f"Reading from MIDI device ID: {input_id}")
-
+        # mendapatkan qaplication di mido keybinding draw
+        self.app: QApplication = controller.frontend.app 
+        self.exception = MidiException()
+        
     # mentranslate hasil dari int menjadi literal note midi controller
     def translate(self, note:int, velocity:int ) -> str:
         modulus: int = note%12
@@ -32,10 +32,24 @@ class BackendMidi:
 
         return f"{NOTE.get(modulus)}{octave}"
     
+    def device_init(self):
+        
+        print(f"Reading from MIDI device")
+        input_id = pygame.midi.get_default_input_id()
+        
+        if input_id == -1:
+            self.exception.device_unconnected()
+            return
+
+        print(f"Device found: {input_id}")
+        return pygame.midi.Input(input_id)
+
     def run(self):
+        self.midi_input = self.device_init()
         self.timer = QTimer(self.app)
         self.timer.timeout.connect(self.update_detection)
         self.timer.start(16)
+        
 
     def close(self):
         self.timer.stop()
@@ -59,8 +73,8 @@ class BackendMidi:
 
                     if status == 144: # Note On
                         # Pastikan objek self masih utuh sebelum print/translate
-                        print(self.translate(note=note, velocity=velocity))
+                        notes = self.translate(note=note, velocity=velocity)
+                        self.controller.execute_command(key=notes)
                         
         except Exception as e:
-            # Tangkap error jika MIDI tiba-tiba tertutup saat membaca
-            print(f"Error reading MIDI: {e}")
+            self.exception.app_error()

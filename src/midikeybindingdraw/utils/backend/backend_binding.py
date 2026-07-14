@@ -1,27 +1,41 @@
 from pynput.mouse import Button, Controller as MouseController
 from pynput.keyboard import Key, Controller as KeyboardController
-import time
 
 class BackendBinding:
     def __init__(self):
         
-        mouse = MouseController()
-        keyboard = KeyboardController()
+        self.mouse: MouseController = MouseController()
+        self.keyboard: KeyboardController = KeyboardController()
 
-        # print("Siap-siap... Makro berjalan dalam 3 detik.")
-        # time.sleep(3)
+        # penyimpan command dengan menggunakan dictionary
+        self.commands: dict = {}
 
-        # # 1. Lakukan Klik Mouse di posisi saat ini
-        # mouse.click(Button.left, 1)
-        # time.sleep(0.1)
+    # menambahkan command dengan binding key : command
+    def add_command(self, key: str, command:str):
+        self.commands[key] = command
 
-        # # 2. Simulasikan Tekan & Tahan Ctrl, lalu tekan T
-        # with keyboard.pressed(Key.ctrl):
-        #     keyboard.press('t')
-        #     keyboard.release('t')
+    # execute command untuk key
+    def execute_command(self, key) -> None:
+        command = None
+        command = self.commands.get(key)
 
-        # print("Perintah klik + Ctrl+T berhasil dikirim!")
-    
-    def parse(self) -> None:
+        if command == None :
+            print(f"key { key } belum dibinding dengan command apapun ... ")
+
+        else :
+            self.parse(command=command)
 
         return None
+
+
+    def parse(self, command: str) -> None:
+        return None
+    
+    def keyboard(self, commands: list[str] ):
+        
+        with self.keyboard.pressed(Key.ctrl):
+            self.keyboard.press('t')
+            self.keyboard.release('t')
+
+    def mouse(self, command: list[str]):
+        self.mouse.click(button=Button.left, count=1)

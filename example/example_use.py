@@ -8,7 +8,7 @@ if __name__  == "__main__" :
     app.detect_keyboard()
 
     # # memasukan beberapa key binding
-    # app.add("C7", "#Undo")
+    app.add("C7", "#Undo")
     # app.add("C#7", "#Transpose")
 
     # # app.run untuk memulai menjalankan aplikasi

@@ -5,13 +5,17 @@ import sys
 
 class MidiKeyBindingDraw():
     def __init__(self):
-        self.frontend = FrontEndToast()
-        self.midi = BackendMidi(app=self.frontend.app)
-        self.binding = BackendBinding()
-        pass
+        self.frontend: FrontEndToast = FrontEndToast()
+        self.midi: BackendMidi = BackendMidi(controller=self)
+        self.binding: BackendBinding = BackendBinding()
     
     def detect_keyboard(self) -> None:
         return None
+    
+    # execute command dengan menggunakan binding
+    def execute_command(self, key: str) -> None:
+        self.frontend.showtoast(text=key)
+        self.binding.execute_command(key=key)
 
     # fungsi untuk menjalankan dan memulai loop
     def run(self) -> None:
@@ -39,6 +43,7 @@ class MidiKeyBindingDraw():
         return None
 
     def add(self, key: str, command: str) -> None:
+        self.binding.add_command(key=key, command=command)
         return None
     
     def configure(self) -> None:

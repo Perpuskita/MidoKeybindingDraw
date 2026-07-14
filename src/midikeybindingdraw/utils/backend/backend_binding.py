@@ -29,6 +29,7 @@ class BackendBinding:
 
 
     def parse(self, command: str) -> None:
+        print(command)
         return None
     
     def keyboard(self, commands: list[str] ):

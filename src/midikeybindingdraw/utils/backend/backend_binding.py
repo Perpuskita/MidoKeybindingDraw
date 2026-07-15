@@ -29,14 +29,35 @@ class BackendBinding:
 
 
     def parse(self, command: str) -> None:
-        print(command)
+
+        self.keyboard_run([Key.ctrl, 'c'])
+        commands: list[str] = command.split("+") 
+
+        # mengubah ctrl dan shift key
+        for i, command in enumerate(commands):
+            key = command
+
+            # perbcabangan ctrl dan shif
+            if command == 'ctrl':
+                key = Key.ctrl            
+            elif command == 'shift':
+                key = Key.shift
+
+            # mngubah command[i] menjadi key
+            commands[i] = key
+
+        self.keyboard_run(commands=commands)
         return None
     
-    def keyboard(self, commands: list[str] ):
-        
-        with self.keyboard.pressed(Key.ctrl):
-            self.keyboard.press('t')
-            self.keyboard.release('t')
+    def keyboard_run(self, commands: list[Key] ):
+        try:
+            for key in commands:
+                self.keyboard.press(key=key)
+
+        # release button dari belakang
+        finally:
+            for key in reversed(commands):
+                self.keyboard.release(key=key)
 
     def mouse(self, command: list[str]):
         self.mouse.click(button=Button.left, count=1)
